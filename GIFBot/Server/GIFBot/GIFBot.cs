@@ -814,39 +814,6 @@ namespace GIFBot.Server.GIFBot
          _ = SendLogMessage($"Joined channel {e.Channel} as {e.BotUsername}");
       }
 
-      //private void TwitchClient_OnBeingHosted(object sender, TwitchLib.Client.Events.OnBeingHostedArgs e)
-      //{
-      //   AnimationData animation = null;                  
-      //   var qualifyingAnimations = AnimationManager.GetAllAnimations(AnimationManager.FetchType.EnabledOnly).Where(a => a.IsHostAlert &&
-      //                                                                                                                   (String.IsNullOrEmpty(a.HostRestrictedToUsername) ||
-      //                                                                                                                   a.HostRestrictedToUsername.Equals(e.BeingHostedNotification.HostedByChannel, StringComparison.OrdinalIgnoreCase))).ToList();
-      //   if (qualifyingAnimations.Count > 0)
-      //   {
-      //      int randomIndex = Common.sRandom.Next(qualifyingAnimations.Count);
-      //      if (randomIndex < qualifyingAnimations.Count)
-      //      {
-      //         animation = qualifyingAnimations[randomIndex];
-      //      }
-            
-      //      if (animation != null)
-      //      {
-      //         AnimationManager.ForceQueueAnimation(animation, e.BeingHostedNotification.HostedByChannel, String.Empty);
-      //      }
-      //   }
-
-      //   _ = SendLogMessage($"Hosted by {e.BeingHostedNotification.HostedByChannel}.");
-
-      //   // Place a sticker, if applicable.
-      //   if (StickersManager != null &&
-      //       StickersManager.Data != null &&
-      //       StickersManager.Data.Enabled &&
-      //       StickersManager.Data.IncludeHosts)
-      //   {
-      //      _ = SendLogMessage($"Sticker placed for host from [{e.BeingHostedNotification.HostedByChannel}].");
-      //      _ = StickersManager.PlaceASticker();
-      //   }
-      //}
-
       private void TwitchClient_OnRaidNotification(object sender, TwitchLib.Client.Events.OnRaidNotificationArgs e)
       {
          AnimationData animation = null;                  
