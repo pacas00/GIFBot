@@ -567,8 +567,6 @@ namespace GIFBot.Server.GIFBot
 
          if (mStreamerTwitchClient != null)
          {
-            mStreamerTwitchClient.OnBeingHosted -= TwitchClient_OnBeingHosted;
-
             mStreamerTwitchClient.Disconnect();
          }
 
@@ -619,8 +617,6 @@ namespace GIFBot.Server.GIFBot
             mStreamerTwitchClient = new TwitchClient(customClient);
             mStreamerTwitchClient.Initialize(connectionCredentials, BotSettings.ChannelName.Trim());
 
-            mStreamerTwitchClient.OnBeingHosted += TwitchClient_OnBeingHosted;
-
             mStreamerTwitchClient.Connect();
          }
 
@@ -642,35 +638,44 @@ namespace GIFBot.Server.GIFBot
             var follower = e.NewFollowers.FirstOrDefault();
             if (follower != null)
             {
-               if ((DateTime.Now.Subtract(follower.FollowedAt).TotalMinutes < 5))
+               if (DateTime.TryParse(follower.FollowedAt, DateTimeFormatInfo.CurrentInfo, DateTimeStyles.AssumeUniversal, out DateTime FollowedAt))
                {
-                  _ = SendLogMessage($"New Follower: {follower.FromUserName}");
-
-                  AnimationData animation = null;                  
-                  var qualifyingAnimations = AnimationManager.GetAllAnimations(AnimationManager.FetchType.EnabledOnly).Where(a => a.IsFollowerAlert).ToList();            
-                  if (qualifyingAnimations.Count > 0)
+                  if (DateTime.UtcNow.Subtract(FollowedAt).TotalMinutes < 5)
                   {
-                     int randomIndex = Common.sRandom.Next(qualifyingAnimations.Count);
-                     if (randomIndex < qualifyingAnimations.Count)
+                     _ = SendLogMessage($"New Follower: {follower.UserName}");
+
+                     AnimationData animation = null;
+                     var qualifyingAnimations = AnimationManager.GetAllAnimations(AnimationManager.FetchType.EnabledOnly).Where(a => a.IsFollowerAlert).ToList();
+                     if (qualifyingAnimations.Count > 0)
                      {
-                        animation = qualifyingAnimations[randomIndex];
+                        int randomIndex = Common.sRandom.Next(qualifyingAnimations.Count);
+                        if (randomIndex < qualifyingAnimations.Count)
+                        {
+                           animation = qualifyingAnimations[randomIndex];
+                        }
+
+                        if (animation != null)
+                        {
+                           AnimationManager.ForceQueueAnimation(animation, follower.UserName, String.Empty);
+                        }
                      }
 
-                     if (animation != null)
+                     // Place a sticker, if applicable.
+                     if (StickersManager != null &&
+                         StickersManager.Data != null &&
+                         StickersManager.Data.Enabled &&
+                         StickersManager.Data.IncludeFollows)
                      {
-                        AnimationManager.ForceQueueAnimation(animation, follower.FromUserName, String.Empty);
+                        _ = SendLogMessage($"Sticker placed for follow from [{follower.UserName}].");
+                        _ = StickersManager.PlaceASticker();
                      }
                   }
+               }
+               else
+               {
 
-                  // Place a sticker, if applicable.
-                  if (StickersManager != null &&
-                      StickersManager.Data != null &&
-                      StickersManager.Data.Enabled &&
-                      StickersManager.Data.IncludeFollows)
-                  {
-                     _ = SendLogMessage($"Sticker placed for follow from [{follower.FromUserName}].");
-                     _ = StickersManager.PlaceASticker();
-                  }
+                  Console.WriteLine("Peter Screwed up the parser, give him the following text as reference for UTC TIMESTAMP GIFBOT LINE 645");
+                  Console.WriteLine(follower.FollowedAt);
                }
             }
          }
@@ -795,7 +800,7 @@ namespace GIFBot.Server.GIFBot
          ApiSettings apiSettings = new ApiSettings() {
             AccessToken = BotSettings.BotOauthToken,
             ClientId = Common.skTwitchClientId,
-            Scopes = new List<TwitchLib.Api.Core.Enums.AuthScopes>() { TwitchLib.Api.Core.Enums.AuthScopes.Any, TwitchLib.Api.Core.Enums.AuthScopes.Chat_Login, TwitchLib.Api.Core.Enums.AuthScopes.Channel_Read, TwitchLib.Api.Core.Enums.AuthScopes.Channel_Subscriptions }
+            Scopes = new List<TwitchLib.Api.Core.Enums.AuthScopes>() { TwitchLib.Api.Core.Enums.AuthScopes.Any, TwitchLib.Api.Core.Enums.AuthScopes.Chat_Read, TwitchLib.Api.Core.Enums.AuthScopes.Channel_Read, TwitchLib.Api.Core.Enums.AuthScopes.Channel_Subscriptions }
          };
 
          mFollowerService = new FollowerService(new TwitchAPI(null, null, apiSettings));
@@ -809,38 +814,38 @@ namespace GIFBot.Server.GIFBot
          _ = SendLogMessage($"Joined channel {e.Channel} as {e.BotUsername}");
       }
 
-      private void TwitchClient_OnBeingHosted(object sender, TwitchLib.Client.Events.OnBeingHostedArgs e)
-      {
-         AnimationData animation = null;                  
-         var qualifyingAnimations = AnimationManager.GetAllAnimations(AnimationManager.FetchType.EnabledOnly).Where(a => a.IsHostAlert &&
-                                                                                                                         (String.IsNullOrEmpty(a.HostRestrictedToUsername) ||
-                                                                                                                         a.HostRestrictedToUsername.Equals(e.BeingHostedNotification.HostedByChannel, StringComparison.OrdinalIgnoreCase))).ToList();
-         if (qualifyingAnimations.Count > 0)
-         {
-            int randomIndex = Common.sRandom.Next(qualifyingAnimations.Count);
-            if (randomIndex < qualifyingAnimations.Count)
-            {
-               animation = qualifyingAnimations[randomIndex];
-            }
+      //private void TwitchClient_OnBeingHosted(object sender, TwitchLib.Client.Events.OnBeingHostedArgs e)
+      //{
+      //   AnimationData animation = null;                  
+      //   var qualifyingAnimations = AnimationManager.GetAllAnimations(AnimationManager.FetchType.EnabledOnly).Where(a => a.IsHostAlert &&
+      //                                                                                                                   (String.IsNullOrEmpty(a.HostRestrictedToUsername) ||
+      //                                                                                                                   a.HostRestrictedToUsername.Equals(e.BeingHostedNotification.HostedByChannel, StringComparison.OrdinalIgnoreCase))).ToList();
+      //   if (qualifyingAnimations.Count > 0)
+      //   {
+      //      int randomIndex = Common.sRandom.Next(qualifyingAnimations.Count);
+      //      if (randomIndex < qualifyingAnimations.Count)
+      //      {
+      //         animation = qualifyingAnimations[randomIndex];
+      //      }
             
-            if (animation != null)
-            {
-               AnimationManager.ForceQueueAnimation(animation, e.BeingHostedNotification.HostedByChannel, String.Empty);
-            }
-         }
+      //      if (animation != null)
+      //      {
+      //         AnimationManager.ForceQueueAnimation(animation, e.BeingHostedNotification.HostedByChannel, String.Empty);
+      //      }
+      //   }
 
-         _ = SendLogMessage($"Hosted by {e.BeingHostedNotification.HostedByChannel}.");
+      //   _ = SendLogMessage($"Hosted by {e.BeingHostedNotification.HostedByChannel}.");
 
-         // Place a sticker, if applicable.
-         if (StickersManager != null &&
-             StickersManager.Data != null &&
-             StickersManager.Data.Enabled &&
-             StickersManager.Data.IncludeHosts)
-         {
-            _ = SendLogMessage($"Sticker placed for host from [{e.BeingHostedNotification.HostedByChannel}].");
-            _ = StickersManager.PlaceASticker();
-         }
-      }
+      //   // Place a sticker, if applicable.
+      //   if (StickersManager != null &&
+      //       StickersManager.Data != null &&
+      //       StickersManager.Data.Enabled &&
+      //       StickersManager.Data.IncludeHosts)
+      //   {
+      //      _ = SendLogMessage($"Sticker placed for host from [{e.BeingHostedNotification.HostedByChannel}].");
+      //      _ = StickersManager.PlaceASticker();
+      //   }
+      //}
 
       private void TwitchClient_OnRaidNotification(object sender, TwitchLib.Client.Events.OnRaidNotificationArgs e)
       {
