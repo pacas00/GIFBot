@@ -24,7 +24,7 @@ namespace GIFBot.Shared.Utility
 
          if (channelId != 0)
          {
-            string url = string.Format("https://api.twitch.tv/helix/users/follows?from_id={0}&to_id={1}", viewerId, channelId);
+            string url = string.Format("https://api.twitch.tv/helix/channels/followers?user_id={0}&broadcaster_id={1}", viewerId, channelId);
 
             HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, url);
             request.Headers.Add("Authorization", $"Bearer {oauth.Trim()}");
@@ -35,7 +35,7 @@ namespace GIFBot.Shared.Utility
             {
                string jsonData = response.Content.ReadAsStringAsync().Result;
                dynamic responseData = JsonConvert.DeserializeObject<object>(jsonData);
-               if (responseData["total"] != null && responseData["total"] != 0)
+               if (responseData["data"] != null && responseData["data"]["followed_at"] != null)
                {
                   return true;
                }
